@@ -1,0 +1,78 @@
+@import url();
+
+:root{
+    --background: #e0e5ec;/*variables*/
+    --gray: #797d7f;
+}
+
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+body{
+    margin:0;
+    font-family:"Raleway", sans-serif;
+}
+
+img {
+    max-width: 100%;
+}
+
+.container{
+    background-color: var(--background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.player{
+    width: 300px;
+    height: 550px;
+    background-color: var(--background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    box-shadow: 9px 9px 16px rgba(163, 177, 198, 0.6), 
+    -9px -9px 16px rgba(255, 255, 255, 0.5);
+    /*neoformismo*/
+}
+
+.player__controls{
+    display: flex;
+    width: 95%;
+    justify-content: space-evenly;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.player__btn{
+    cursor:pointer;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    box-shadow: -8px -8px 20px 0px #fff9, -6px -6px 6px #fff9,
+    8px 8px 20px #0001, 5px 5px 6px 0px #0001 ;
+    color: var(--gray);
+}
+
+.player__btn:active{
+    box-shadow: inset -8px -8px 20px #fff9, inset -5px -5px 5px #fff9,
+    inset 8px 8px 20px #003, inset 5px 5px 6px #0001;
+}
+
+.player__btn--small{
+    min-height: 50px;
+    min-width: 50px;
+}
+
+.player__title{
+    font-weight: 600;
+    font-size: 0.8em;
+    color: #a1a1a1;
+    text-transform: ;
+}

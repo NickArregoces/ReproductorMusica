@@ -1,0 +1,17 @@
+@import url();
+
+:root{
+    --background: #e0e5ec;
+    --gray: #797d7f;
+}
+
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+
+.player__album img {
+    max-width: 100%;
+}

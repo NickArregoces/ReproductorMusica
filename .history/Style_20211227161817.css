@@ -1,0 +1,11 @@
+@import url();
+
+*,
+*::before,
+::after{
+    box-sizing: ;
+}
+
+img {
+    max-width: 100%;
+}

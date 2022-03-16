@@ -1,0 +1,11 @@
+@import url();
+
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+.player__img {
+    max-width: 100%;
+}

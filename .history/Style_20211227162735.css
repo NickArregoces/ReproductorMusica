@@ -1,0 +1,38 @@
+@import url();
+
+:root{
+    --background: #e0e5ec;/*variables*/
+    --gray: #797d7f;
+}
+
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+body{
+    margin:0;
+    font-family:"Raleway", sans-serif;
+}
+
+img {
+    max-width: 100%;
+}
+
+.container{
+    background-color: var(--background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.player{
+    width: 300px;
+    height: 550px;
+    background-color: var(--background);
+    display: flex;
+    flex-direction: column;
+    just
+}

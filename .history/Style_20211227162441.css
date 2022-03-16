@@ -1,0 +1,25 @@
+@import url();
+
+:root{
+    --background: #e0e5ec;
+    --gray: #797d7f;
+}
+
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+body{
+    margin:0;
+    font-family:"Raleway", sans-serif;
+}
+
+img {
+    max-width: 100%;
+}
+
+.container{
+    backg
+}

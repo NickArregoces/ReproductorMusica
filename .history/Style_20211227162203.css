@@ -1,0 +1,14 @@
+@import url();
+
+:root{
+    background: ;
+}
+*,
+*::before,
+::after{
+    box-sizing: border-box;
+}
+
+.player__album img {
+    max-width: 100%;
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music</title>
+
+    <!--FontAwesome-->
+    <script src="https://kit.fontawesome.com/fc28c3338f.js" crossorigin="anonymous"></script>
+
+</head>
+<body>
+    
+
+    <div class="container">
+        <div class="player">
+            <div class="player__controls">
+                <div class="player__btn__btn--small">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <h5 class="player__title"> Playing Now</h5>
+                <div class="player__btn player__btn--small">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+
+                <div class="player__album">
+                    <img src="./img/img1.jpg" alt="" class="player__img">
+                </div>
+
+                <h2 class="plater__artist">Disclousure</h2>
+                <h3 class="player__song"></h3>
+
+                <input type="range" value="20" min=0 class="player__level">
+
+                <div class="audio__duration">
+                    <div class="start">00:01</div>
+                    <div class="end">04:30</div>
+                </div>
+
+                <audio class="player__audio" controls id="audio">
+                    <source src="./media/one-punch-man-amv-see-me-fall.mp3" type="audio/mpeg">
+                </audio>
+
+                <div class="player__controls">
+                    <div class="player__btn__btn--small">
+                        <i class="fas fa-backward"></i>
+                    </div>
+                    <div class="player__btn__btn--small">
+                        i.
+                        <i class="fas fa-pause pause-ben hide"></i>
+                    </div>
+
+                    <div class="player__btn player__btn--small">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                </div>
+
+        </div>
+    </div>
+    <script src="./main.js" ></script>
+</body>
+</html>
