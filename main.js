@@ -1,17 +1,26 @@
-const DEFAULT_PLAYLIST = [
-  {
-    src: './media/one-punch-man-amv-see-me-fall.mp3',
-    artist: 'Disclousure',
-    song: 'Latch'
-  },
-  {
-    src: './media/stay.mp3',
-    artist: 'The Kid LAROI & Justin Bieber',
-    song: 'Stay'
-  }
-];
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let playlist = [];
+
+function trackFromRow(row) {
+  const { data } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(row.file_path);
+  return {
+    id: row.id,
+    file: row.file_path,
+    src: data.publicUrl,
+    artist: row.artist,
+    song: row.song
+  };
+}
+
+function buildStoragePath(fileName) {
+  const safe = fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9.-]/g, '-')
+    .toLowerCase();
+  return `${Date.now()}-${safe.endsWith('.mp3') ? safe : `${safe}.mp3`}`;
+}
 
 const audio = document.getElementById('audio');
 const playPause = document.getElementById('play');
@@ -142,26 +151,33 @@ function readMediaTags(src) {
   }
 
   return new Promise((resolve) => {
-    window.jsmediatags.read(src, {
-      onSuccess(tag) {
-        const tags = tag.tags ?? {};
-        let coverUrl = null;
+    const onSuccess = (tag) => {
+      const tags = tag.tags ?? {};
+      const result = {
+        artist: tags.artist || tags.albumartist || null,
+        title: tags.title || null,
+        coverUrl: coverUrlFromPicture(tags.picture)
+      };
+      tagCache.set(src, result);
+      resolve(result);
+    };
 
-        coverUrl = coverUrlFromPicture(tags.picture);
+    const onError = () => {
+      tagCache.set(src, null);
+      resolve(null);
+    };
 
-        const result = {
-          artist: tags.artist || tags.albumartist || null,
-          title: tags.title || null,
-          coverUrl
-        };
-        tagCache.set(src, result);
-        resolve(result);
-      },
-      onError() {
-        tagCache.set(src, null);
-        resolve(null);
-      }
-    });
+    const isRemote = src.startsWith('http://') || src.startsWith('https://');
+
+    if (isRemote) {
+      fetch(src)
+        .then((response) => response.blob())
+        .then((blob) => window.jsmediatags.read(blob, { onSuccess, onError }))
+        .catch(onError);
+      return;
+    }
+
+    window.jsmediatags.read(src, { onSuccess, onError });
   });
 }
 
@@ -390,15 +406,23 @@ function isMp3File(file) {
 }
 
 async function fetchPlaylist() {
-  try {
-    const response = await fetch('/api/playlist');
-    if (!response.ok) {
-      throw new Error('No se pudo cargar la playlist');
+  const { data, error } = await supabaseClient
+    .from('tracks')
+    .select('id, file_path, artist, song')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Supabase playlist:', error.message);
+    if (error.message.includes('tracks')) {
+      showUploadStatus(
+        'Falta la tabla tracks. Ejecuta supabase/setup.sql en Supabase → SQL Editor.',
+        true
+      );
     }
-    return response.json();
-  } catch {
-    return [...DEFAULT_PLAYLIST];
+    return [];
   }
+
+  return (data ?? []).map(trackFromRow);
 }
 
 function setPlaylist(tracks) {
@@ -432,63 +456,50 @@ function renderPlaylist() {
   highlightPlaylistItem();
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
-    reader.readAsDataURL(file);
-  });
-}
-
 async function uploadSong(file) {
   if (!isMp3File(file)) {
     showUploadStatus('Solo se permiten archivos MP3', true);
     return;
   }
 
-  showUploadStatus('Guardando en media...');
+  showUploadStatus('Subiendo a Supabase...');
 
   const tags = await readTagsFromFile(file);
-  const payload = {
-    filename: file.name,
-    data: await fileToBase64(file)
-  };
-
-  if (tags?.artist) {
-    payload.artist = tags.artist;
-  }
-  if (tags?.title) {
-    payload.title = tags.title;
-  }
+  const filePath = buildStoragePath(file.name);
+  const titleFromFile = file.name.replace(/\.mp3$/i, '').replace(/-/g, ' ');
+  const artist = tags?.artist || 'Artista desconocido';
+  const song = tags?.title || titleFromFile;
 
   try {
-    const response = await fetch('/api/songs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const { error: uploadError } = await supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, file, { contentType: 'audio/mpeg' });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'No se pudo guardar la canción');
+    if (uploadError) {
+      throw new Error(uploadError.message);
     }
 
-    setPlaylist(data.playlist);
-    cacheTagsFromFile(data.track.src, tags);
-    const newIndex = data.playlist.findIndex((track) => track.file === data.track.file);
-    loadTrack(newIndex >= 0 ? newIndex : playlist.length - 1, true);
-    showUploadStatus('Canción guardada en media');
+    const { error: dbError } = await supabaseClient.from('tracks').insert({
+      file_path: filePath,
+      artist,
+      song
+    });
+
+    if (dbError) {
+      throw new Error(dbError.message);
+    }
+
+    const tracks = await fetchPlaylist();
+    setPlaylist(tracks);
+    const { data: urlData } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+    cacheTagsFromFile(urlData.publicUrl, tags);
+
+    const newIndex = tracks.findIndex((track) => track.file === filePath);
+    loadTrack(newIndex >= 0 ? newIndex : tracks.length - 1, true);
+    showUploadStatus('Canción guardada');
     setTimeout(hideUploadStatus, 2500);
   } catch (error) {
-    showUploadStatus(
-      `${error.message}. Ejecuta "npm start" para guardar en la carpeta media.`,
-      true
-    );
+    showUploadStatus(error.message, true);
   }
 }
 
@@ -555,7 +566,13 @@ async function init() {
 
   if (playlist.length > 0) {
     loadTrack(0);
+    return;
   }
+
+  showUploadStatus(
+    'No hay canciones. Ejecuta setup.sql en Supabase o usa Agregar canción.',
+    true
+  );
 }
 
 init();
